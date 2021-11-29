@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>imminent_collision_interceptor</name>
+  <version>0.0.0</version>
+  <description>Imminent Collision Interceptor</description>
+  <maintainer email="tthayer@slac.stanford.edu">Tom Thayer</maintainer>
+  <license>TODO</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <exec_depend>roscpp</exec_depend>
+  <export>
+  </export>
+</package>
