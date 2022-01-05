@@ -5,6 +5,7 @@
 #include <math.h>
 #include <ros/ros.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
@@ -12,7 +13,7 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 
-ros::Publisher pub_cmd, pub_future_pose;
+ros::Publisher pub_cmd, pub_cmd_cov, pub_future_pose;
 float projection_time, cost_threshold, certainty, robot_radius;
 int num_steps;
 bool only_test_last;
@@ -23,6 +24,13 @@ nav_msgs::Odometry current_odometry;
 int future_pose_seq = 0;
 bool have_costmap = false;
 bool have_odometry = false;
+
+void publish_twist_cov(const geometry_msgs::TwistStamped stamped_twist){
+	geometry_msgs::TwistWithCovarianceStamped out_twist_cov;
+	out_twist_cov.header = stamped_twist.header;
+	out_twist_cov.twist.twist = stamped_twist.twist;
+	pub_cmd_cov.publish(out_twist_cov);
+}
 
 void received_cmd(const geometry_msgs::TwistStamped in_cmd){
     // Check if command has movement
@@ -122,6 +130,7 @@ void received_cmd(const geometry_msgs::TwistStamped in_cmd){
     // Publish and return
     pub_future_pose.publish(future_pose);
     pub_cmd.publish(out_cmd);
+    publish_twist_cov(out_cmd);
     return;
 }
 
@@ -141,6 +150,7 @@ void received_twist_bypass(const geometry_msgs::Twist in_twist){
     stamped_twist.header.frame_id = "";
     stamped_twist.twist = in_twist;
     pub_cmd.publish(stamped_twist);
+    publish_twist_cov(stamped_twist);
 }
 
 void received_costmap(const nav_msgs::OccupancyGrid in_costmap){
@@ -166,6 +176,7 @@ int main(int argc, char **argv){
     ros::Subscriber sub_odometry_filtered = nh.subscribe("odometry/filtered", 1000, &received_odometry_filtered);
     ros::Subscriber sub_twist_bypass = nh.subscribe("cmd_vel/bypass", 1000, &received_twist_bypass);
     pub_cmd = nh.advertise<geometry_msgs::TwistStamped>("cmd_vel/intercepted", 1000);
+    pub_cmd_cov = nh.advertise<geometry_msgs::TwistWithCovarianceStamped>("cmd_vel/intercepted_cov", 1000);
     pub_future_pose = nh.advertise<geometry_msgs::PoseStamped>("/future_pose", 1000);
     // TF and costmap
     tf_listener = new tf::TransformListener();
