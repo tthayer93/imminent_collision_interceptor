@@ -96,8 +96,11 @@ void received_cmd(const geometry_msgs::TwistStamped in_cmd){
                 bad_cmd = true;
                 return;
             }
-            double costmap_pose_x = future_pose.pose.position.x + transform.getOrigin().getX() - current_costmap.info.origin.position.x;
-            double costmap_pose_y = future_pose.pose.position.y + transform.getOrigin().getY() - current_costmap.info.origin.position.y;
+            quat = transform.getRotation();
+            tf::Matrix3x3 quat_mat2(quat);
+            quat_mat2.getRPY(roll, pitch, yaw);
+            double costmap_pose_x = cos(yaw) * future_pose.pose.position.x + transform.getOrigin().getX() - current_costmap.info.origin.position.x;
+            double costmap_pose_y = sin(yaw) * future_pose.pose.position.y + transform.getOrigin().getY() - current_costmap.info.origin.position.y;
             int pc_x = int(costmap_pose_x / current_costmap.info.resolution);
             int pc_y = int(costmap_pose_y / current_costmap.info.resolution);
             // Look at bounding box on costmap for collisions. This is a box around the circle circumscribing the robot (defined by robot_radius).
