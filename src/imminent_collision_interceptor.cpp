@@ -30,6 +30,7 @@ void publish_twist_cov(const geometry_msgs::TwistStamped stamped_twist){
 	out_twist_cov.header = stamped_twist.header;
 	out_twist_cov.twist.twist = stamped_twist.twist;
 	pub_cmd_cov.publish(out_twist_cov);
+	pub_twist.publish(stamped_twist.twist);
 }
 
 void received_cmd(const geometry_msgs::TwistStamped in_cmd){
@@ -132,7 +133,6 @@ void received_cmd(const geometry_msgs::TwistStamped in_cmd){
     }
     // Publish and return
     pub_future_pose.publish(future_pose);
-    pub_twist.publish(out_cmd.twist);
     pub_cmd.publish(out_cmd);
     publish_twist_cov(out_cmd);
     return;
