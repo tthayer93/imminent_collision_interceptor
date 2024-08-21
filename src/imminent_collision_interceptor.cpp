@@ -13,7 +13,7 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 
-ros::Publisher pub_cmd, pub_cmd_cov, pub_future_pose;
+ros::Publisher pub_twist, pub_cmd, pub_cmd_cov, pub_future_pose;
 float projection_time, cost_threshold, certainty, robot_radius;
 int num_steps;
 bool only_test_last;
@@ -132,6 +132,7 @@ void received_cmd(const geometry_msgs::TwistStamped in_cmd){
     }
     // Publish and return
     pub_future_pose.publish(future_pose);
+    pub_twist.publish(out_cmd.twist);
     pub_cmd.publish(out_cmd);
     publish_twist_cov(out_cmd);
     return;
@@ -178,7 +179,8 @@ int main(int argc, char **argv){
     ros::Subscriber sub_costmap = nh.subscribe("local_costmap/costmap/costmap", 1000, &received_costmap);
     ros::Subscriber sub_odometry_filtered = nh.subscribe("odometry/filtered", 1000, &received_odometry_filtered);
     ros::Subscriber sub_twist_bypass = nh.subscribe("cmd_vel/bypass", 1000, &received_twist_bypass);
-    pub_cmd = nh.advertise<geometry_msgs::TwistStamped>("cmd_vel/intercepted", 1000);
+    pub_twist = nh.advertise<geometry_msgs::Twist>("cmd_vel/intercepted", 1000);
+    pub_cmd = nh.advertise<geometry_msgs::TwistStamped>("cmd_vel/intercepted_stamped", 1000);
     pub_cmd_cov = nh.advertise<geometry_msgs::TwistWithCovarianceStamped>("cmd_vel/intercepted_cov", 1000);
     pub_future_pose = nh.advertise<geometry_msgs::PoseStamped>("/future_pose", 1000);
     // TF and costmap
