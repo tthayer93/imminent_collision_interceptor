@@ -10,6 +10,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <std_msgs/Bool.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 
@@ -24,6 +25,7 @@ nav_msgs::Odometry current_odometry;
 int future_pose_seq = 0;
 bool have_costmap = false;
 bool have_odometry = false;
+bool cmd_interlock = false;
 
 void publish_twist_cov(const geometry_msgs::TwistStamped stamped_twist){
 	geometry_msgs::TwistWithCovarianceStamped out_twist_cov;
@@ -123,7 +125,7 @@ void received_cmd(const geometry_msgs::TwistStamped in_cmd){
         }
     }
     // Zero out cmd if needed
-    if(bad_cmd){
+    if(bad_cmd || cmd_interlock){
         out_cmd.twist.linear.x = 0.0;
         out_cmd.twist.linear.y = 0.0;
         out_cmd.twist.linear.z = 0.0;
@@ -168,6 +170,10 @@ void received_odometry_filtered(const nav_msgs::Odometry in_odometry_filtered){
     have_odometry = true;
 }
 
+void received_cmd_interlock(const std_msgs::Bool in_cmd_interlock){
+    cmd_interlock = in_cmd_interlock.data;
+}
+
 int main(int argc, char **argv){
     // Init
     ros::init(argc, argv, "imminent_collision_interceptor");
@@ -179,6 +185,7 @@ int main(int argc, char **argv){
     ros::Subscriber sub_costmap = nh.subscribe("local_costmap/costmap/costmap", 1000, &received_costmap);
     ros::Subscriber sub_odometry_filtered = nh.subscribe("odometry/filtered", 1000, &received_odometry_filtered);
     ros::Subscriber sub_twist_bypass = nh.subscribe("cmd_vel/bypass", 1000, &received_twist_bypass);
+    ros::Subscriber sub_cmd_interlock = nh.subscribe("cmd_vel/interlock", 1000, &received_cmd_interlock);
     pub_twist = nh.advertise<geometry_msgs::Twist>("cmd_vel/intercepted", 1000);
     pub_cmd = nh.advertise<geometry_msgs::TwistStamped>("cmd_vel/intercepted_stamped", 1000);
     pub_cmd_cov = nh.advertise<geometry_msgs::TwistWithCovarianceStamped>("cmd_vel/intercepted_cov", 1000);
